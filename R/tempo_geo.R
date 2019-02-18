@@ -86,6 +86,8 @@ tempo_geo <- function(matrix, year, area, filter = NULL, title = NULL) {
     matrix <- matrix[-rows_to_remove,]
     title_def <- paste(unname(as.matrix(matrix[1,-c(pos_column_jud, pos_column_val, pos_column_year)])), collapse = "")
     label <- aggregate(cbind(long, lat) ~ mnemonic, data=df_coordinates, FUN=function(x)mean(range(x)))
+    label$lat[24] <- label$lat[24] + 1.3
+    label$lat[12] <- label$lat[12] - 2
     matrix[,pos_column_jud] <- trimws(as.character(matrix[,pos_column_jud]))
     df_coordinates$county <- trimws(df_coordinates$county)
     df_coordinates <- left_join(df_coordinates, matrix[,c(pos_column_jud, pos_column_val)], by = c("county"=column_names[pos_column_jud]))
@@ -100,6 +102,7 @@ tempo_geo <- function(matrix, year, area, filter = NULL, title = NULL) {
     
     matrix <- matrix[set_reg,]
     label <- aggregate(cbind(long, lat) ~ region, data=df_coordinates, FUN=function(x)mean(range(x)))
+    label$lat[6] <- label$lat[6] - 5
     matrix[,pos_column_reg] <- trimws(as.character(matrix[,pos_column_reg]))
     matrix[,pos_column_macroreg] <- gsub(" - ","-", matrix[,pos_column_macroreg])
     title_def <- paste(unname(as.matrix(matrix[1,-c(pos_column_reg, pos_column_val, pos_column_year)])), collapse = "")
@@ -177,8 +180,8 @@ plot_map <- function(df_coordinates, title, legend_name, label, tmp){
   
   plot <- ggplot(df_coordinates) +  
     theme_bw() + 
-    geom_polygon(aes(long, lat, group=mnemonic, fill=df_coordinates[,ncol(df_coordinates)]), colour = "black") +
-    geom_text(data=label, aes(long, lat, label=label[,1]), size=3, vjust=0) +
+    geom_polygon(aes(long, lat, group=mnemonic, fill=df_coordinates[,ncol(df_coordinates)]), colour = "gray45") +
+    geom_text(data=label, aes(long, lat, label=label[,1]), size=3.5, vjust=0, fontface='bold') +
     scale_fill_gradient(low='white', high='red', na.value = "gray", name = legend_name)+
     ggtitle(title) +
     coord_fixed(1) 
