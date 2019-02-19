@@ -34,7 +34,7 @@ tempo_clean <- function(matrix){
   
   column_names <- names(matrix)
   #pos_ani <- grep("([aA]ni|[yY]ears)", column_names, fixed = TRUE) #Ani, Years
-  pos_ani <- which(names(matrix)=="Ani" | names(matrix) == "Year")
+  pos_ani <- which(names(matrix)=="Ani" | names(matrix) == "Years")
   pos_um <- grep("(UM|MU|masura)", column_names)
   
   if (length(pos_ani) > 0) {
