@@ -50,8 +50,7 @@ tempo_geo <- function(matrix, year, area, filter = NULL, title = NULL) {
     return (NULL)
   }
   
-  matrix <- subset_filter(matrix, filter)
-  
+  matrix <- tempo_clean(matrix)
   
   # year parameter
   column_names <- names(matrix)
@@ -64,10 +63,10 @@ tempo_geo <- function(matrix, year, area, filter = NULL, title = NULL) {
     cat("No data available for the specified time! Data only available for: ", lv, "\n")
     return (NULL)
   }
-
+  
   matrix <- subset(matrix, matrix[,pos_column_year] == year)
-  
-  
+  matrix <- subset_filter(matrix, filter)
+
   # area parameter
   pos_column_jud <- grep("(judete|counties)", tolower(column_names))
   pos_column_reg <- grep("(regiuni|regions)", tolower(column_names)) 
@@ -78,6 +77,10 @@ tempo_geo <- function(matrix, year, area, filter = NULL, title = NULL) {
   if ("Years" %in% column_names) {
     df_coordinates$region <- df_coordinates$region_en
     df_coordinates$macroregion <- df_coordinates$macroregion_en
+  }
+  
+  if (is.factor(matrix[,pos_column_val]) | is.factor(matrix[,pos_column_val]) ) {
+    matrix[,pos_column_val] <- as.numeric(as.character(matrix[,pos_column_val]))
   }
   
   if(area == "counties") {
@@ -139,7 +142,7 @@ tempo_geo <- function(matrix, year, area, filter = NULL, title = NULL) {
 }
 
 subset_filter <- function(matrix, filter) {
-  matrix <- tempo_clean(matrix)
+  
   column_names <- names(matrix)
   pos <- grep(("regiuni|judete|macroregiuni|ani$|localitati|valoare|regions|counties|macroregions|years$|localities|value"), tolower(column_names))
 
@@ -148,6 +151,7 @@ subset_filter <- function(matrix, filter) {
 
   if (is.null(filter)) {
     for(i in n) {
+      matrix[,i] <- factor(matrix[,i])
       lvs <- levels(matrix[,i])
       if(length(lvs)>1){
         lv <- lvs[2]
@@ -163,6 +167,7 @@ subset_filter <- function(matrix, filter) {
     
     j <- 1;
     for(i in n) {
+      matrix[,i] <- factor(matrix[,i])
       lvs <- trimws(levels(matrix[,i]))
       lv <- trimws(filter[j])
       
@@ -183,7 +188,7 @@ subset_filter <- function(matrix, filter) {
 
 plot_map <- function(df_coordinates, title, legend_name, label, tmp) {
   options(scipen=999)
-  
+
   plot <- ggplot(df_coordinates) +  
     theme_bw() + 
     geom_polygon(aes(long, lat, group=mnemonic, fill=df_coordinates[,ncol(df_coordinates)]), colour = "gray45") +
