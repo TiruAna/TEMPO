@@ -190,7 +190,7 @@ plot_map <- function (df_coordinates, title, legend_name, label, tmp) {
     geom_text(data=label, aes(long, lat, label=label[,1]), size=3.5, vjust=0, fontface='bold') +
     scale_fill_gradient(low='white', high='red', na.value = "gray", name = legend_name)+
     ggtitle(title) +
-    coord_cartesian(xlim = c(20,30), ylim = c(42,50))
+    coord_fixed(ratio = 1.5, xlim = c(20,30), ylim = c(43.5,48.5))
   
   if (anyNA(df_coordinates)) {
     plot <- plot +
