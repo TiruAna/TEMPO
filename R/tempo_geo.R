@@ -29,25 +29,21 @@
 tempo_geo <- function(matrix, year, area, filter, title = NULL) {
   
   if (nargs() < 4) {
-    print("Wrong number of arguments!")
-    return (NULL)
+    stop("Wrong number of arguments! Provide at least 4 arguments!")
   }
   
   tmp <- deparse(substitute(matrix))
   if (!exists(tmp)) {
-    cat("Matrix not found:", tmp, "\n")
-    return (NULL)
+    stop("Matrix not found:", tmp, "\n")
   }
   
   if (is.null(matrix) | !is.data.frame(matrix)) {
     type <- class(matrix)
-    cat("Invalid type (",type, ") of argument!\n", sep = "")
-    return (NULL)
+    stop("Invalid type (",type, ") of argument!\n", sep = "")
   }
   
   if (!(area %in% c("counties", "regions", "macroregions"))) {
-    cat("Wrong argument! The argument should be \"counties\" or \"regions\" or \"macroregions\".\n")
-    return (NULL)
+    stop("Wrong argument! The argument should be \"counties\" or \"regions\" or \"macroregions\".\n")
   }
   
   matrix <- tempo_clean(matrix)
@@ -58,10 +54,9 @@ tempo_geo <- function(matrix, year, area, filter, title = NULL) {
   pos_column_year <- which(names(matrix)=="Ani" | names(matrix) == "Years")
   lv <- levels(matrix[,pos_column_year])
   pos_year <- grep(year, lv)
-  
+  print(pos_year)
   if (length(pos_year) < 1) {
-    cat("No data available for the specified time! Data only available for: ", lv, "\n")
-    return (NULL)
+    stop("No data available for the specified time! Data only available for: ", lv, "\n")
   }
   
   matrix <- subset(matrix, matrix[,pos_column_year] == year)
@@ -78,6 +73,8 @@ tempo_geo <- function(matrix, year, area, filter, title = NULL) {
   if ("Years" %in% column_names) {
     df_coordinates$region <- df_coordinates$region_en
     df_coordinates$macroregion <- df_coordinates$macroregion_en
+    df_coordinates_r$region <- df_coordinates_r$region_en
+    df_coordinates_m$macroregion <- df_coordinates_m$macroregion_en
     en <- 1
   }
   
@@ -87,8 +84,7 @@ tempo_geo <- function(matrix, year, area, filter, title = NULL) {
   
   if (area == "counties") {
     if (length(pos_column_jud) == 0) {
-      cat("No data available for counties!\n")
-      return (NULL)
+      stop("No data available for counties!\n")
     }
     if (length(pos_column_loc) > 0) {
       matrix <- subset(matrix, trimws(as.character(matrix[,pos_column_loc]))=="TOTAL")
@@ -106,32 +102,30 @@ tempo_geo <- function(matrix, year, area, filter, title = NULL) {
   
   if (area == "regions") {
     if (length(pos_column_reg)==0) {
-      cat("No data available for regions!\n")
-      return (NULL)
+      stop("No data available for regions!\n")
     }
     set_reg <- grep("(^regiunea|north|east|south|west|center|bucharest)", tolower(trimws(as.character(matrix[,pos_column_reg]))))
     matrix <- matrix[set_reg,]
-    label <- aggregate(cbind(long, lat) ~ region, data=df_coordinates, FUN=function(x)mean(range(x)))
+    label <- aggregate(cbind(long, lat) ~ region, data=df_coordinates_r, FUN=function(x)mean(range(x)))
     label$lat[6] <- label$lat[6] - 5
     matrix[,pos_column_reg] <- trimws(as.character(matrix[,pos_column_reg]))
     matrix[,pos_column_macroreg] <- gsub(" - ","-", matrix[,pos_column_macroreg])
     title_def <- paste(unname(as.matrix(matrix[1,-c(pos_column_reg, pos_column_val, pos_column_year)])), collapse = "")
-    df_coordinates$region <- trimws(df_coordinates$region)
-    df_coordinates <- left_join(df_coordinates, matrix[,c(pos_column_reg, pos_column_val)], by = c("region"=column_names[pos_column_reg]))
+    df_coordinates_r$region <- trimws(df_coordinates_r$region)
+    df_coordinates <- left_join(df_coordinates_r, matrix[,c(pos_column_reg, pos_column_val)], by = c("region"=column_names[pos_column_reg]))
   }
   
   if (area == "macroregions") {
     if (length(pos_column_macroreg)==0) {
-      cat("No data available for macroregions!\n")
-      return (NULL)
+      stop("No data available for macroregions!\n")
     }
     set_reg <- grep("(macroregiunea|macroregion)", tolower(matrix[,pos_column_macroreg]))
     matrix <- matrix[set_reg,]
-    label <- aggregate(cbind(long, lat) ~ macroregion, data=df_coordinates, FUN=mean)
+    label <- aggregate(cbind(long, lat) ~ macroregion, data=df_coordinates_m, FUN=mean)
     matrix[,pos_column_macroreg] <- trimws(as.character(matrix[,pos_column_macroreg]))
     title_def <- paste(unname(as.matrix(matrix[1,-c(pos_column_macroreg, pos_column_val, pos_column_year)])), collapse = "")
-    df_coordinates$macroregion <- trimws(df_coordinates$macroregion)
-    df_coordinates <- left_join(df_coordinates, matrix[,c(pos_column_macroreg, pos_column_val)], by = c("macroregion"=column_names[pos_column_macroreg]))
+    df_coordinates_m$macroregion <- trimws(df_coordinates_m$macroregion)
+    df_coordinates <- left_join(df_coordinates_m, matrix[,c(pos_column_macroreg, pos_column_val)], by = c("macroregion"=column_names[pos_column_macroreg]))
   }
   
   if (is.null(title)) {
@@ -156,8 +150,7 @@ subset_filter <- function(matrix, filter) {
   n <- n[-pos]
 
   if (length(filter) != length(n)) {
-    cat("Not enough filters! Add ", length(n), " filters!\n")
-    return (NULL)
+    stop("Not enough filters! Add ", length(n), " filters!\n")
   }
     
   j <- 1;
@@ -167,8 +160,7 @@ subset_filter <- function(matrix, filter) {
     lv <- tolower(trimws(filter[j]))
       
     if (!(lv %in% lvs)) {
-      cat("Incorrect filter! Choose filter from: ", lvs, "\n")
-      return (NULL)
+      stop("Incorrect filter! Choose filter from: ", lvs, "\n")
     }
       
     if (length(lvs) > 1) {
@@ -186,7 +178,7 @@ plot_map <- function (df_coordinates, title, legend_name, label, tmp) {
 
   plot <- ggplot(df_coordinates) +  
     theme_bw() + 
-    geom_polygon(aes(long, lat, group=mnemonic, fill=df_coordinates[,ncol(df_coordinates)]), colour = "gray45") +
+    geom_polygon(aes(long, lat, group=df_coordinates[,3], fill=df_coordinates[,ncol(df_coordinates)]), colour = "gray45") +
     geom_text(data=label, aes(long, lat, label=label[,1]), size=3.5, vjust=0, fontface='bold') +
     scale_fill_gradient(low='white', high='red', na.value = "gray", name = legend_name)+
     ggtitle(title) +
@@ -197,7 +189,7 @@ plot_map <- function (df_coordinates, title, legend_name, label, tmp) {
       geom_polygon(aes(c(40), c(40), colour="")) +
       guides(colour=guide_legend("No data", override.aes=list(colour="gray1", fill="gray")))
   }
-  plot_name <- paste0(tmp, "_map.pdf")
+  plot_name <- paste0(tmp, "_map.png")
   ggsave(plot_name, width = 20, height = 20, units = "cm")
   
   return (plot)
@@ -223,3 +215,4 @@ plot_map <- function (df_coordinates, title, legend_name, label, tmp) {
 #   }
 #   return (matrix)
 # }
+
