@@ -26,10 +26,10 @@
 #' @import ggplot2
 #' @export
 
-tempo_geo <- function(matrix, year, area, filter, title = NULL) {
+tempo_geo <- function(matrix, year, area, filter = NULL, title = NULL) {
   
-  if (nargs() < 4) {
-    stop("Wrong number of arguments! Provide at least 4 arguments!")
+  if (nargs() < 3) {
+    stop("Wrong number of arguments! Provide at least 3 arguments!")
   }
   
   tmp <- deparse(substitute(matrix))
@@ -53,9 +53,10 @@ tempo_geo <- function(matrix, year, area, filter, title = NULL) {
   
   pos_column_year <- which(names(matrix)=="Ani" | names(matrix) == "Years")
   lv <- levels(matrix[,pos_column_year])
-  pos_year <- grep(year, lv)
-  print(pos_year)
+  exact_year <- paste0("^",year,"$")
+  pos_year <- grep(exact_year, lv)
   if (length(pos_year) < 1) {
+    lv <- paste(lv, collapse = " ")
     stop("No data available for the specified time! Data only available for: ", lv, "\n")
   }
   
@@ -68,6 +69,11 @@ tempo_geo <- function(matrix, year, area, filter, title = NULL) {
   pos_column_macroreg <- grep("(macroregiuni|macroregions)", tolower(column_names)) 
   pos_column_val <- grep("(valoare|value)", tolower(column_names))
   pos_column_loc <- which(names(matrix) == "Localitati" | names(matrix) == "Localities")
+  
+  
+  if (length(pos_column_jud) == 0 & length(pos_column_reg) == 0 & length(pos_column_macroreg) == 0) {
+    stop("Due to the lack of geospatial information, the data cannot be represented on the map.")
+  }
   
   en <- 0
   if ("Years" %in% column_names) {
@@ -148,7 +154,15 @@ subset_filter <- function(matrix, filter) {
 
   n <- seq(ncol(matrix)) 
   n <- n[-pos]
-
+  
+  if (length(n) == 0){
+    return (matrix)
+  }
+  
+  if (is.null(filter)) {
+    stop("\"filter\" parameter is required! Matrix contains multiple categories!")
+  }
+  
   if (length(filter) != length(n)) {
     stop("Not enough filters! Add ", length(n), " filters!\n")
   }
@@ -160,6 +174,7 @@ subset_filter <- function(matrix, filter) {
     lv <- tolower(trimws(filter[j]))
       
     if (!(lv %in% lvs)) {
+      lvs <- paste(lvs, collapse = ", ")
       stop("Incorrect filter! Choose filter from: ", lvs, "\n")
     }
       
@@ -196,23 +211,4 @@ plot_map <- function (df_coordinates, title, legend_name, label, tmp) {
 }
 
 
-# subset_default <- function (matrix, filter) {
-#   column_names <- names(matrix)
-#   pos <- grep(("regiuni|judete|macroregiuni|ani$|localitati|valoare|regions|counties|macroregions|years$|localities|value"), tolower(column_names))
-#   
-#   n <- seq(ncol(matrix)) 
-#   n <- n[-pos]
-#   
-#   if (is.null(filter)) {
-#     for (i in n) {
-#       matrix[,i] <- factor(matrix[,i])
-#       lvs <- levels(matrix[,i])
-#       if (length(lvs)>1) {
-#         lv <- lvs[1]
-#         matrix <- subset(matrix, matrix[,i] == lv)
-#       }
-#     }
-#   }
-#   return (matrix)
-# }
 
