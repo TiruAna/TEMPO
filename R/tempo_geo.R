@@ -18,9 +18,8 @@
 #' @return Returns a ggplot object. 
 #' 
 #' @examples 
-#' tempo_geo(matrix = AGR111A, year = "2000", area = "counties", 
-#'           filter = c("Struguri de masa","Sector privat"),
-#'           title = "Hectare struguri de masa pe judete")
+#' tempo_geo(matrix = AGR111A, year = "2000",area = "counties", 
+#'           filter = c("Wine grapes","Private sector"))
 #' 
 #' @import dplyr
 #' @import ggplot2
@@ -50,6 +49,17 @@ tempo_geo <- function(matrix, year, area, filter = NULL, title = NULL) {
   
   # year parameter
   column_names <- names(matrix)
+  
+  pos_column_period <- which(names(matrix)=="Perioade" | names(matrix) == "Periods")
+  if (length(pos_column_period) > 0) {
+    pp <- grep("([aA]nul|[yY]ear)", matrix[,pos_column_period])
+    matrix[,pos_column_period] <- as.character(matrix[,pos_column_period])
+    matrix <- matrix[pp,]
+    if ("Periods" %in% names(matrix)) names(matrix)[pos_column_period] <- "Years" 
+    if ("Perioade" %in% names(matrix)) names(matrix)[pos_column_period] <- "Ani"
+    matrix <- tempo_clean(matrix)
+    matrix[,pos_column_period] <- as.factor(matrix[,pos_column_period])
+  }
   
   pos_column_year <- which(names(matrix)=="Ani" | names(matrix) == "Years")
   lv <- levels(matrix[,pos_column_year])
